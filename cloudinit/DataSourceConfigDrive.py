@@ -80,8 +80,15 @@ class DataSourceConfigDrive(DataSource.DataSource):
             else:
                 log.debug("updating network interfaces from configdrive")
 
+            # Start of PF9 Patch
             util.write_file("/etc/network/interfaces",
-                md['network-interfaces'])
+                results['network_config'])
+            try:
+                util.subp(['ifdown', '--all'])
+            except exc:
+                LOG.warn("ifdown --all encountered error %s" % (exc.output[1]))
+            # end of PF9 Patch
+
             try:
                 (out, err) = util.subp(['ifup', '--all'])
                 if len(out) or len(err):
