@@ -155,9 +155,11 @@ class Distro(distros.Distro):
                 return default
 
     def _bring_up_interfaces(self, device_names):
+        # first bring down the interface (ignore error if it doesn't).
         if device_names and 'all' in device_names:
             raise RuntimeError(('Distro %s can not translate '
                                 'the device name "all"') % (self.name))
+        distros.Distro._bring_down_interfaces(self, device_names)
         return distros.Distro._bring_up_interfaces(self, device_names)
 
     def set_timezone(self, tz):

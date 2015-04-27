@@ -23,7 +23,7 @@
 
 from cloudinit.distros.parsers.resolv_conf import ResolvConf
 from cloudinit.distros.parsers.sys_conf import SysConf
-
+from configobj import ConfigObjError
 from cloudinit import log as logging
 from cloudinit import util
 
@@ -138,6 +138,7 @@ def update_sysconfig_file(fn, adjustments, allow_empty=False):
         ]
         if not exists:
             lines.insert(0, util.make_header())
+        LOG.debug("Writing %s,\n %s" %(fn, lines))
         util.write_file(fn, "\n".join(lines) + "\n", 0644)
 
 
@@ -149,7 +150,14 @@ def read_sysconfig_file(fn):
         exists = True
     except IOError:
         contents = []
-    return (exists, SysConf(contents))
+    # Now try to parse it, if the parsing fails ignore the parsing
+    # error
+    try:
+        return (exists, SysConf(contents))
+    except ConfigObjError as e:
+        contents = []
+        LOG.warning("Parsing error reading file %s, %s ignoring" %(fn, str(e)))
+        return (exists, SysConf(contents))
 
 
 # Helper function to update RHEL/SUSE /etc/resolv.conf

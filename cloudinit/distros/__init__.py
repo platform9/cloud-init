@@ -266,10 +266,17 @@ class Distro(object):
             contents.write("%s\n" % (eh))
             util.write_file(self.hosts_fn, contents.getvalue(), mode=0644)
 
+    def _bring_down_interface(self, device_name):
+        cmd = ['ifdown', device_name]
+        return self._attempt_command(cmd)
+
     def _bring_up_interface(self, device_name):
         cmd = ['ifup', device_name]
-        LOG.debug("Attempting to run bring up interface %s using command %s",
-                   device_name, cmd)
+        return self._attempt_command(cmd)
+
+    def _attempt_command(self, cmd):
+        LOG.debug("Attempting to run command %s",
+                    cmd)
         try:
             (_out, err) = util.subp(cmd)
             if len(err):
@@ -279,10 +286,17 @@ class Distro(object):
             util.logexc(LOG, "Running interface command %s failed", cmd)
             return False
 
+    def _bring_down_interfaces(self, device_names):
+        return self._attempt_command_devices("ifdown", device_names)
+
     def _bring_up_interfaces(self, device_names):
+        return self._attempt_command_devices("ifup", device_names)
+
+    def _attempt_command_devices(self, cmd, device_names):
         am_failed = 0
         for d in device_names:
-            if not self._bring_up_interface(d):
+            exc = [cmd, d]
+            if not self._attempt_command(exc):
                 am_failed += 1
         if am_failed == 0:
             return True
